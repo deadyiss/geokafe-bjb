@@ -1,11 +1,15 @@
 # ☕ GeoKafe BJB
 
+
 **Direktori & Peta Interaktif Cafe — Banjarbaru & Martapura**
 
 WebGIS berbasis satu file HTML yang menampilkan persebaran cafe di wilayah Kota Banjarbaru dan Kabupaten Banjar (Martapura), dilengkapi filter, analitik, dan deteksi status buka/tutup secara real-time.
 
 ---
+## Akses Github Pages
+URL : https://deadyiss.github.io/geokafe-bjb/
 
+---
 ## Fitur
 
 - **Peta Interaktif** — marker berwarna per kategori cafe, cluster otomatis saat zoom out
@@ -27,7 +31,7 @@ WebGIS berbasis satu file HTML yang menampilkan persebaran cafe di wilayah Kota 
 
 Tidak perlu instalasi, server, atau build tool.
 
-1. Download file `geokafe-bjb.html`
+1. Download file `index.html`
 2. Buka langsung di browser (Chrome / Firefox / Edge)
 3. Koneksi internet diperlukan untuk memuat tile peta dan library CDN
 
