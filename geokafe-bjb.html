@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GeoKafe BJB | Direktori Cafe Banjarbaru & Martapura</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Karla:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --bg:       #EFF3F8;
+      --s1:       #FFFFFF;
+      --s2:       #F7F9FC;
+      --s3:       #EFF3F8;
+      --b1:       #DDE4EE;
+      --b2:       #C8D4E3;
+      --text:     #1A2540;
+      --sub:      #3D506A;
+      --muted:    #6B80A0;
+      --dim:      #99AABB;
+      --accent:   #F59E0B;
+      --a-glow:   rgba(245,158,11,0.18);
+      --a-light:  rgba(245,158,11,0.08);
+      --kopi:     #6366F1;
+      --nonkopi:  #F97316;
+      --keduanya: #10B981;
+      --budget:   #16A34A;
+      --mid:      #2563EB;
+      --premium:  #9333EA;
+      --open:     #16A34A;
+      --closed:   #DC2626;
+      --shadow:   0 2px 12px rgba(30,40,80,0.08);
+      --shadow-md:0 4px 24px rgba(30,40,80,0.13);
+      --r: 10px;
+      --fd:'Outfit',sans-serif;
+      --fb:'Karla',sans-serif;
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;overflow:hidden;}
+    body{font-family:var(--fb);background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px;}
+
+    /* ── Loading ── */
+    #loading{
+      position:fixed;inset:0;z-index:9999;background:var(--s1);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+      transition:opacity .4s ease;
+    }
+    #loading.out{opacity:0;pointer-events:none;}
+    .ld-ring{width:48px;height:48px;position:relative;}
+    .ld-ring::before{
+      content:'';position:absolute;inset:0;
+      border:3px solid var(--b1);border-top-color:var(--accent);
+      border-radius:50%;animation:spin .85s linear infinite;
+    }
+    .ld-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .ld-title{font-family:var(--fd);font-size:17px;font-weight:800;color:var(--text);}
+    .ld-sub{font-size:12px;color:var(--muted);}
+    .ld-dots{display:flex;gap:5px;}
+    .ld-dots i{width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.25;animation:blink 1s ease-in-out infinite;}
+    .ld-dots i:nth-child(2){animation-delay:.15s;}
+    .ld-dots i:nth-child(3){animation-delay:.3s;}
+    @keyframes blink{50%{opacity:1;transform:scale(1.35);}}
+
+    /* ── Navbar ── */
+    #nav{
+      height:52px;flex-shrink:0;z-index:600;
+      background:var(--s1);border-bottom:1px solid var(--b1);
+      display:flex;align-items:center;gap:10px;padding:0 14px;
+      box-shadow:var(--shadow);
+    }
+    .nav-logo{
+      width:32px;height:32px;border-radius:9px;flex-shrink:0;
+      background:linear-gradient(135deg,#F59E0B,#D97706);
+      display:flex;align-items:center;justify-content:center;font-size:16px;
+      box-shadow:0 2px 10px var(--a-glow);
+    }
+    .nav-brand{font-family:var(--fd);font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.02em;}
+    .nav-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+    .nav-gap{flex:1;}
+    .nav-count{
+      display:flex;align-items:center;gap:6px;
+      background:var(--s2);border:1px solid var(--b1);
+      border-radius:8px;padding:5px 12px;
+      font-size:11px;color:var(--muted);font-family:var(--fd);
+    }
+    .nav-count strong{color:var(--accent);font-size:13px;font-weight:800;}
+    .nav-count .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--a-glow);}
+    #sb-toggle{
+      width:32px;height:32px;border-radius:8px;flex-shrink:0;
+      background:var(--s2);border:1px solid var(--b1);
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;color:var(--muted);transition:all .15s;
+    }
+    #sb-toggle:hover{background:var(--b1);color:var(--text);}
+
+    /* ── Layout ── */
+    #main{flex:1;display:flex;overflow:hidden;}
+
+    /* ── Sidebar ── */
+    #sb{
+      width:256px;flex-shrink:0;
+      background:var(--s1);border-right:1px solid var(--b1);
+      display:flex;flex-direction:column;overflow:hidden;
+      transition:width .25s cubic-bezier(.4,0,.2,1);
+      box-shadow:var(--shadow);
+    }
+    #sb.closed{width:0;}
+    .sbi{
+      flex:1;min-width:256px;
+      overflow-y:auto;overflow-x:hidden;
+      padding:10px;display:flex;flex-direction:column;gap:8px;
+    }
+
+    /* ── Sidebar card ── */
+    .sc{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:10px 11px;}
+    .slbl{
+      font-family:var(--fd);font-size:9px;font-weight:700;
+      color:var(--dim);text-transform:uppercase;letter-spacing:.1em;
+      margin-bottom:8px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .slbl-btn{
+      font-size:9px;color:var(--accent);background:none;border:none;
+      cursor:pointer;font-family:var(--fb);padding:1px 5px;border-radius:4px;transition:background .15s;
+    }
+    .slbl-btn:hover{background:var(--a-light);}
+
+    /* ── Search ── */
+    .search-wrap{position:relative;}
+    .search-ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--dim);pointer-events:none;}
+    .search-inp{
+      width:100%;background:var(--s1);border:1px solid var(--b1);
+      border-radius:8px;padding:7px 28px 7px 29px;
+      font-size:12px;color:var(--text);outline:none;font-family:var(--fb);
+      transition:border-color .15s,box-shadow .15s;
+    }
+    .search-inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a-light);}
+    .search-inp::placeholder{color:var(--dim);font-size:11px;}
+    .search-clr{
+      position:absolute;right:8px;top:50%;transform:translateY(-50%);
+      background:var(--b1);border:none;width:16px;height:16px;border-radius:50%;
+      cursor:pointer;font-size:9px;color:var(--muted);
+      display:none;align-items:center;justify-content:center;transition:background .15s;
+    }
+    .search-clr:hover{background:var(--b2);}
+    .search-inp:not(:placeholder-shown)~.search-clr{display:flex;}
+
+    /* Search hint chips — kecamatan quicklinks */
+    .hint-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;}
+    .hint-chip{
+      font-size:9.5px;font-family:var(--fd);font-weight:600;
+      color:var(--muted);background:var(--s1);
+      border:1px solid var(--b1);border-radius:999px;
+      padding:2px 8px;cursor:pointer;transition:all .15s;
+    }
+    .hint-chip:hover{color:var(--accent);border-color:var(--accent);background:var(--a-light);}
+
+    /* ── Pills ── */
+    .pill-wrap{display:flex;flex-wrap:wrap;gap:5px;}
+    .pill{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:4px 10px;border-radius:999px;
+      font-size:10.5px;font-weight:600;font-family:var(--fd);
+      cursor:pointer;border:1.5px solid var(--b1);
+      background:var(--s1);color:var(--muted);
+      transition:all .18s;user-select:none;
+    }
+    .pill .pd{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .pill.on{color:var(--c);border-color:var(--c);background:color-mix(in srgb,var(--c) 8%,white);}
+    .pill:hover{opacity:.75;}
+    .pill:active{transform:scale(.95);}
+
+    /* ── Harga description ── */
+    .harga-desc{margin-top:7px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
+    .harga-desc-item{background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:5px 6px;text-align:center;}
+    .harga-desc-name{font-family:var(--fd);font-size:9px;font-weight:700;letter-spacing:.04em;}
+    .harga-desc-range{font-size:8.5px;color:var(--muted);margin-top:2px;line-height:1.3;}
+
+    /* ── Range ── */
+    .rng-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .rng-val{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--accent);}
+    input[type="range"]{-webkit-appearance:none;width:100%;height:4px;background:var(--b1);border-radius:4px;outline:none;}
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+      background:var(--accent);cursor:pointer;border:2.5px solid white;
+      box-shadow:0 1px 6px var(--a-glow);
+    }
+    .rng-ticks{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-top:4px;font-family:var(--fd);}
+
+    /* ── Toggle ── */
+    .tog-row{display:flex;align-items:center;justify-content:space-between;}
+    .tog-lbl{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px;}
+    .tsw{position:relative;width:38px;height:21px;display:inline-block;flex-shrink:0;}
+    .tsw input{opacity:0;width:0;height:0;}
+    .ttrk{position:absolute;inset:0;background:var(--b1);border-radius:21px;cursor:pointer;transition:background .2s;}
+    .ttrk::before{content:'';position:absolute;width:15px;height:15px;left:3px;top:3px;background:var(--dim);border-radius:50%;transition:.2s;}
+    .tsw input:checked+.ttrk{background:var(--accent);}
+    .tsw input:checked+.ttrk::before{transform:translateX(17px);background:white;}
+
+    /* ── CSV ── */
+    .csv-lbl{
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      border:1.5px dashed var(--b2);border-radius:8px;
+      padding:7px;font-size:11px;color:var(--muted);
+      cursor:pointer;transition:all .15s;width:100%;font-family:var(--fb);
+    }
+    .csv-lbl:hover{border-color:var(--accent);color:var(--accent);background:var(--a-light);}
+
+    /* ── Stats ── */
+    .sg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+    .st{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:8px 10px;}
+    .st.wide{grid-column:1/-1;}
+    .stk{font-size:8.5px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;}
+    .stv{font-family:var(--fd);font-size:20px;font-weight:800;margin-top:2px;line-height:1;}
+    .stv.sm{font-size:12px;margin-top:4px;font-weight:600;}
+
+    /* ── Cat bars ── */
+    .cb-wrap{display:flex;flex-direction:column;gap:5px;margin-top:8px;}
+    .cb-row{display:flex;align-items:center;gap:7px;}
+    .cb-lbl{width:60px;flex-shrink:0;font-size:10px;color:var(--muted);font-family:var(--fd);}
+    .cb-track{flex:1;height:4px;background:var(--b1);border-radius:4px;overflow:hidden;}
+    .cb-fill{height:100%;border-radius:4px;transition:width .4s cubic-bezier(.4,0,.2,1);}
+    .cb-num{width:16px;flex-shrink:0;text-align:right;font-family:var(--fd);font-size:10px;font-weight:700;}
+
+    /* ── Legend ── */
+    .leg{display:flex;flex-direction:column;gap:5px;margin-top:8px;padding-top:8px;border-top:1px solid var(--b1);}
+    .leg-item{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--sub);}
+    .leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+
+    /* ── Reset btn ── */
+    .reset-btn{
+      width:100%;background:var(--s1);border:1px solid var(--b1);
+      border-radius:8px;padding:6px;font-size:11px;color:var(--muted);
+      cursor:pointer;font-family:var(--fd);font-weight:600;letter-spacing:.03em;transition:all .15s;
+    }
+    .reset-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--a-light);}
+
+    /* ── Map ── */
+    #map-wrap{flex:1;position:relative;overflow:hidden;}
+    #map{width:100%;height:100%;}
+
+    /* ── Detail Panel — height auto, mengikuti konten ── */
+    #detail{
+      position:absolute;
+      top:10px;
+      right:-310px;
+      width:290px;
+      /* Tidak pakai bottom: 10px — biarkan tinggi mengikuti isi */
+      max-height:calc(100% - 20px);
+      z-index:450;
+      background:var(--s1);
+      border:1px solid var(--b1);
+      border-radius:var(--r);
+      box-shadow:var(--shadow-md);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      transition:right .3s cubic-bezier(.4,0,.2,1);
+    }
+    #detail.open{right:10px;}
+
+    .dp-stripe{height:4px;flex-shrink:0;}
+    .dp-hd{padding:13px 14px 11px;border-bottom:1px solid var(--b1);flex-shrink:0;position:relative;}
+    .dp-close{
+      position:absolute;top:12px;right:11px;
+      width:24px;height:24px;border-radius:50%;
+      background:var(--s2);border:1px solid var(--b1);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      font-size:12px;color:var(--muted);transition:all .15s;
+    }
+    .dp-close:hover{background:var(--b1);color:var(--text);}
+    .dp-name{font-family:var(--fd);font-size:15px;font-weight:800;color:var(--text);line-height:1.3;padding-right:26px;margin-bottom:8px;letter-spacing:-.01em;}
+    .dp-badges{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+    .dp-badge{font-size:9px;font-weight:700;padding:2px 9px;border-radius:999px;font-family:var(--fd);letter-spacing:.03em;}
+    .badge-open{background:rgba(22,163,74,.1);color:var(--open);font-family:var(--fd);font-size:9px;font-weight:700;padding:2px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:3px;}
+    .badge-closed{background:rgba(220,38,38,.1);color:var(--closed);font-family:var(--fd);font-size:9px;font-weight:700;padding:2px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:3px;}
+    .badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+    /* dp-body: overflow-y:auto tapi tinggi tidak dipaksa stretch */
+    .dp-body{
+      overflow-y:auto;
+      padding:12px 14px 14px;
+      display:flex;flex-direction:column;gap:9px;
+    }
+    .dp-row{display:flex;align-items:flex-start;gap:8px;font-size:12px;}
+    .dp-ico{flex-shrink:0;width:16px;text-align:center;margin-top:1px;}
+    .dp-val{color:var(--sub);line-height:1.5;}
+    .dp-val strong{color:var(--text);}
+    .dp-divider{height:1px;background:var(--b1);}
+
+    /* Rating section */
+    .dp-rrow{display:flex;align-items:flex-end;gap:6px;}
+    .dp-rnum{font-family:var(--fd);font-size:22px;font-weight:800;color:var(--text);}
+    .dp-rsub{font-size:11px;color:var(--muted);}
+    .dp-stars{font-size:16px;letter-spacing:-1px;}
+    .dp-rbar{height:6px;background:var(--b1);border-radius:6px;overflow:hidden;margin-top:5px;}
+    .dp-rfill{height:100%;border-radius:6px;transition:width .5s;}
+
+    /* ── Floating filter badge ── */
+    #map-badge{
+      position:absolute;bottom:28px;left:10px;z-index:400;
+      background:var(--s1);border:1px solid var(--b1);
+      border-radius:8px;padding:5px 10px;
+      font-size:10px;color:var(--muted);font-family:var(--fd);
+      pointer-events:none;opacity:0;transition:opacity .3s;
+      box-shadow:var(--shadow);display:flex;align-items:center;gap:5px;
+    }
+    #map-badge.vis{opacity:1;}
+    #map-badge .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);}
+
+    /* ── Leaflet ── */
+    .leaflet-control-zoom a{background:var(--s1)!important;color:var(--text)!important;border-color:var(--b1)!important;}
+    .leaflet-control-zoom a:hover{background:var(--s2)!important;}
+    .leaflet-bar{box-shadow:var(--shadow)!important;border:none!important;}
+
+    /* Cluster tooltip */
+    .leaflet-tooltip{
+      background:var(--s1)!important;border:1px solid var(--b1)!important;
+      border-radius:9px!important;padding:0!important;
+      box-shadow:var(--shadow-md)!important;color:var(--text)!important;
+    }
+    .leaflet-tooltip::before{display:none!important;}
+    .leaflet-tooltip-top{margin-top:-8px!important;}
+    .ctip{padding:9px 12px;font-family:var(--fd);min-width:130px;}
+    .ctip-title{font-size:9px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;}
+    .ctip-row{font-size:11px;font-weight:600;margin-top:3px;display:flex;align-items:center;gap:5px;}
+    .ctip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+    /* Cluster markers */
+    .marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(245,158,11,.12)!important;}
+    .marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{
+      background:rgba(245,158,11,.85)!important;color:#fff!important;
+      font-family:var(--fd)!important;font-weight:800!important;font-size:11px!important;
+    }
+
+    /* ── Dashboard ── */
+    #dash{
+      background:var(--s1);border-top:1px solid var(--b1);
+      flex-shrink:0;transition:height .3s cubic-bezier(.4,0,.2,1);overflow:hidden;
+      box-shadow:0 -2px 12px rgba(30,40,80,.06);
+    }
+    #dash.col{height:44px;}
+    #dash.exp{height:212px;}
+    #dash-bar{
+      height:44px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:7px;
+      user-select:none;transition:background .15s;
+    }
+    #dash-bar:hover{background:var(--s2);}
+    #dash.exp #dash-bar{border-bottom:1px solid var(--b1);}
+    .dash-lbl{font-family:var(--fd);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;}
+    #dash-arr{font-size:9px;color:var(--dim);transition:transform .3s;}
+    #dash.exp #dash-arr{transform:rotate(180deg);}
+    .cg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px;height:168px;}
+    .cc{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;}
+    .cc-title{font-size:8.5px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;flex-shrink:0;font-family:var(--fd);}
+    .cw{position:relative;flex:1;}
+
+    /* ── Responsive ── */
+    @media(max-width:768px){
+      #sb{position:absolute;top:0;bottom:0;left:0;z-index:700;}
+      #sb.closed{width:0;}
+      .cg{grid-template-columns:1fr;height:auto;overflow-y:auto;}
+      #dash.exp{height:380px;}
+      #detail{width:calc(100vw - 20px);right:-100vw;}
+      #detail.open{right:10px;}
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="ld-ring"><span>☕</span></div>
+  <div style="text-align:center;">
+    <div class="ld-title">GeoKafe BJB</div>
+    <div class="ld-sub">Memuat direktori cafe Banjarbaru & Martapura...</div>
+  </div>
+  <div class="ld-dots"><i></i><i></i><i></i></div>
+</div>
+
+<div id="app" style="display:flex;flex-direction:column;height:100vh;">
+
+  <nav id="nav">
+    <button id="sb-toggle" onclick="toggleSb()" title="Tampilkan/Sembunyikan Sidebar">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>
+      </svg>
+    </button>
+    <div class="nav-logo">☕</div>
+    <div>
+      <div class="nav-brand">GeoKafe BJB</div>
+      <div class="nav-sub">Banjarbaru & Martapura</div>
+    </div>
+    <div class="nav-gap"></div>
+    <div class="nav-count">
+      <span class="dot"></span>
+      <strong id="nc">0</strong>&nbsp;cafe
+    </div>
+  </nav>
+
+  <div id="main">
+
+    <aside id="sb">
+      <div class="sbi">
+
+        <!-- Search — mencari nama cafe DAN kecamatan -->
+        <div class="sc" style="padding:9px 10px;background:var(--s1);">
+          <div class="search-wrap">
+            <svg class="search-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-inp" id="q" type="text" placeholder="Nama cafe atau kecamatan..." oninput="onQ()"/>
+            <button class="search-clr" onclick="clearQ()">✕</button>
+          </div>
+          <!-- Quick-select kecamatan sebagai chip hint -->
+          <div class="hint-chips" id="hint-chips"></div>
+        </div>
+
+        <!-- Filter Kategori -->
+        <div class="sc">
+          <div class="slbl">
+            Kategori
+            <button class="slbl-btn" onclick="toggleAllCat()">Semua</button>
+          </div>
+          <div class="pill-wrap">
+            <button class="pill on" id="pk" style="--c:var(--kopi)" onclick="togglePill('k')">
+              <span class="pd"></span>Kopi
+            </button>
+            <button class="pill on" id="pn" style="--c:var(--nonkopi)" onclick="togglePill('n')">
+              <span class="pd"></span>Non-Kopi
+            </button>
+            <button class="pill on" id="pe" style="--c:var(--keduanya)" onclick="togglePill('e')">
+              <span class="pd"></span>Keduanya
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Harga -->
+        <div class="sc">
+          <div class="slbl">Kisaran Harga</div>
+          <div class="pill-wrap">
+            <button class="pill on" id="pb" style="--c:var(--budget)" onclick="togglePill('b')">Budget</button>
+            <button class="pill on" id="pm" style="--c:var(--mid)" onclick="togglePill('m')">Mid</button>
+            <button class="pill on" id="pp" style="--c:var(--premium)" onclick="togglePill('p')">Premium</button>
+          </div>
+          <div class="harga-desc">
+            <div class="harga-desc-item">
+              <div class="harga-desc-name" style="color:var(--budget);">Budget</div>
+              <div class="harga-desc-range">&lt; Rp 30.000</div>
+            </div>
+            <div class="harga-desc-item">
+              <div class="harga-desc-name" style="color:var(--mid);">Mid</div>
+              <div class="harga-desc-range">Rp 30–70 rb</div>
+            </div>
+            <div class="harga-desc-item">
+              <div class="harga-desc-name" style="color:var(--premium);">Premium</div>
+              <div class="harga-desc-range">&gt; Rp 70.000</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rating -->
+        <div class="sc">
+          <div class="rng-hd">
+            <div class="slbl" style="margin-bottom:0;">Rating Minimum</div>
+            <div class="rng-val" id="rv">★ 1.0</div>
+          </div>
+          <input type="range" id="sr" min="1" max="5" step="0.1" value="1" oninput="onRng()"/>
+          <div class="rng-ticks"><span>1.0</span><span>3.0</span><span>5.0</span></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="sc">
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <div class="tog-row">
+              <span class="tog-lbl">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg>
+                Tampilkan Heatmap
+              </span>
+              <label class="tsw">
+                <input type="checkbox" id="th" onchange="applyHeat()"/>
+                <span class="ttrk"></span>
+              </label>
+            </div>
+            <div style="border-top:1px solid var(--b1);padding-top:9px;">
+              <label for="csvf" class="csv-lbl">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload CSV
+              </label>
+              <input type="file" id="csvf" accept=".csv" style="display:none;" onchange="handleCSV(event)"/>
+              <div style="font-size:9px;color:var(--dim);margin-top:5px;text-align:center;">
+                nama_cafe · kecamatan · lat · lng · alamat · kategori · jam_buka · kisaran_harga · rating
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--b1);padding-top:8px;">
+              <button class="reset-btn" onclick="resetAll()">↺ &nbsp;Reset Semua Filter</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="sc">
+          <div class="slbl" style="margin-bottom:9px;">Statistik</div>
+          <div class="sg">
+            <div class="st"><div class="stk">Total</div><div class="stv" style="color:var(--mid);" id="s-tot">0</div></div>
+            <div class="st"><div class="stk">Avg Rating</div><div class="stv" style="color:var(--accent);" id="s-avg">—</div></div>
+            <div class="st wide"><div class="stk">Terbanyak</div><div class="stv sm" style="color:var(--keduanya);" id="s-top">—</div></div>
+          </div>
+          <div class="cb-wrap" id="cbars"></div>
+          <div class="leg">
+            <div class="leg-item"><span class="leg-dot" style="background:var(--kopi);"></span>Kopi</div>
+            <div class="leg-item"><span class="leg-dot" style="background:var(--nonkopi);"></span>Non-Kopi</div>
+            <div class="leg-item"><span class="leg-dot" style="background:var(--keduanya);"></span>Keduanya</div>
+          </div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b1);display:flex;gap:12px;">
+            <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--sub);">
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--open);display:inline-block;"></span>Buka
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--sub);">
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--closed);display:inline-block;"></span>Tutup
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <div id="map-wrap">
+      <div id="map"></div>
+
+      <!-- Detail panel — tinggi mengikuti konten -->
+      <div id="detail">
+        <div class="dp-stripe" id="dp-stripe"></div>
+        <div class="dp-hd">
+          <button class="dp-close" onclick="closeDetail()">✕</button>
+          <div class="dp-name" id="dp-name">—</div>
+          <div class="dp-badges" id="dp-badges"></div>
+        </div>
+        <div class="dp-body" id="dp-body"></div>
+      </div>
+
+      <div id="map-badge">
+        <span class="dot"></span>
+        <span id="map-badge-txt"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="dash" class="col">
+    <div id="dash-bar" onclick="toggleDash()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--dim)">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      <span class="dash-lbl">Dashboard Analitik</span>
+      <span id="dash-arr">▲</span>
+    </div>
+    <div class="cg">
+      <div class="cc"><div class="cc-title">Jumlah per Kategori</div><div class="cw"><canvas id="c1"></canvas></div></div>
+      <div class="cc"><div class="cc-title">Distribusi Harga</div><div class="cw"><canvas id="c2"></canvas></div></div>
+      <div class="cc"><div class="cc-title">Top 5 Rating</div><div class="cw"><canvas id="c3"></canvas></div></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   SAMPLE DATA
+   Field kecamatan: nama kecamatan asli (Banjarbaru & Martapura)
+   ═══════════════════════════════════════════════════ */
+const SAMPLE_DATA = [
+  // ── Banjarbaru ──
+  { nama_cafe:"Kopi Banua",             kecamatan:"Banjarbaru Utara",  latitude:-3.4419, longitude:114.8308, alamat:"Jl. A. Yani Km 34",          kategori:"Kopi",     jam_buka:"07:00 – 22:00", kisaran_harga:"Budget",  rating:4.2 },
+  { nama_cafe:"Rumah Kopi Nusantara",   kecamatan:"Banjarbaru Utara",  latitude:-3.4380, longitude:114.8270, alamat:"Jl. Trikora No. 5",           kategori:"Kopi",     jam_buka:"08:00 – 23:00", kisaran_harga:"Mid",     rating:4.5 },
+  { nama_cafe:"Cafe Langit Sore",       kecamatan:"Banjarbaru Selatan",latitude:-3.4350, longitude:114.8350, alamat:"Jl. Panglima Batur No. 7",    kategori:"Keduanya", jam_buka:"14:00 – 00:00", kisaran_harga:"Mid",     rating:4.7 },
+  { nama_cafe:"Teh Tarik Corner",       kecamatan:"Banjarbaru Utara",  latitude:-3.4460, longitude:114.8290, alamat:"Jl. Kemuning Raya No. 3",     kategori:"Non-Kopi", jam_buka:"06:00 – 21:00", kisaran_harga:"Budget",  rating:3.9 },
+  { nama_cafe:"Brew & Co",              kecamatan:"Banjarbaru Selatan",latitude:-3.4410, longitude:114.8410, alamat:"Jl. Ahmad Yani No. 22",       kategori:"Kopi",     jam_buka:"09:00 – 22:00", kisaran_harga:"Premium", rating:4.8 },
+  { nama_cafe:"Warung Kopi Tradisional",kecamatan:"Cempaka",           latitude:-3.4330, longitude:114.8230, alamat:"Jl. Guntung Manggis No. 9",   kategori:"Kopi",     jam_buka:"05:30 – 20:00", kisaran_harga:"Budget",  rating:4.0 },
+  { nama_cafe:"Cozy Corner",            kecamatan:"Landasan Ulin",     latitude:-3.4490, longitude:114.8370, alamat:"Jl. Sei Ulin Raya No. 14",    kategori:"Keduanya", jam_buka:"10:00 – 23:00", kisaran_harga:"Mid",     rating:4.3 },
+  { nama_cafe:"Kopitiam Borneo",        kecamatan:"Banjarbaru Selatan",latitude:-3.4370, longitude:114.8450, alamat:"Jl. Komp. Citra Mas No. 4",   kategori:"Kopi",     jam_buka:"07:00 – 21:00", kisaran_harga:"Mid",     rating:4.4 },
+  { nama_cafe:"Senja Cafe",             kecamatan:"Banjarbaru Utara",  latitude:-3.4300, longitude:114.8380, alamat:"Jl. Akhmad Mochtar No. 11",   kategori:"Keduanya", jam_buka:"15:00 – 01:00", kisaran_harga:"Premium", rating:4.6 },
+  { nama_cafe:"Kedai Pagi",             kecamatan:"Liang Anggang",     latitude:-3.4500, longitude:114.8320, alamat:"Jl. Veteran No. 6",           kategori:"Non-Kopi", jam_buka:"05:00 – 12:00", kisaran_harga:"Budget",  rating:3.8 },
+  // ── Martapura ──
+  { nama_cafe:"Kafe Intan Martapura",   kecamatan:"Martapura Kota",    latitude:-3.4163, longitude:114.8519, alamat:"Jl. A. Yani No. 18",          kategori:"Keduanya", jam_buka:"08:00 – 22:00", kisaran_harga:"Mid",     rating:4.1 },
+  { nama_cafe:"Kedai Santai",           kecamatan:"Martapura Kota",    latitude:-3.4200, longitude:114.8560, alamat:"Jl. Sekumpul No. 7",          kategori:"Kopi",     jam_buka:"07:00 – 21:00", kisaran_harga:"Budget",  rating:3.7 },
+  { nama_cafe:"Kopi Permata",           kecamatan:"Martapura Barat",   latitude:-3.4140, longitude:114.8490, alamat:"Jl. Pasar Baru No. 2",        kategori:"Kopi",     jam_buka:"06:00 – 20:00", kisaran_harga:"Budget",  rating:4.0 },
+  { nama_cafe:"Cafe Tepi Sungai",       kecamatan:"Martapura Timur",   latitude:-3.4110, longitude:114.8540, alamat:"Jl. Martapura Lama No. 5",    kategori:"Keduanya", jam_buka:"11:00 – 23:00", kisaran_harga:"Premium", rating:4.9 },
+  { nama_cafe:"Nongkrong Asik",         kecamatan:"Martapura Kota",    latitude:-3.4230, longitude:114.8580, alamat:"Jl. Pekauman No. 3",          kategori:"Non-Kopi", jam_buka:"14:00 – 00:00", kisaran_harga:"Mid",     rating:4.2 },
+  { nama_cafe:"Kopi Rasa",              kecamatan:"Martapura Barat",   latitude:-3.4180, longitude:114.8610, alamat:"Jl. Mawar No. 8",             kategori:"Kopi",     jam_buka:"08:00 – 22:00", kisaran_harga:"Mid",     rating:4.3 },
+  { nama_cafe:"Warung Kopi Paman",      kecamatan:"Martapura Timur",   latitude:-3.4250, longitude:114.8470, alamat:"Jl. Veteran No. 1",           kategori:"Kopi",     jam_buka:"05:00 – 19:00", kisaran_harga:"Budget",  rating:3.6 },
+  { nama_cafe:"Biji Kopi Cafe",         kecamatan:"Martapura Kota",    latitude:-3.4090, longitude:114.8500, alamat:"Jl. Pangeran No. 10",         kategori:"Keduanya", jam_buka:"09:00 – 23:00", kisaran_harga:"Premium", rating:4.8 },
+];
+
+/* Daftar kecamatan unik untuk chip hint */
+const ALL_KECAMATAN = [
+  'Banjarbaru Utara','Banjarbaru Selatan','Cempaka','Landasan Ulin','Liang Anggang',
+  'Martapura Kota','Martapura Barat','Martapura Timur'
+];
+
+/* ═══════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════ */
+let cafeData = [...SAMPLE_DATA];
+let map, cluster, heat;
+let c1, c2, c3;
+let dashOpen = false, sbOpen = true;
+
+const P = { k:true, n:true, e:true, b:true, m:true, p:true };
+const PILL_EL = { k:'pk', n:'pn', e:'pe', b:'pb', m:'pm', p:'pp' };
+
+/* ═══════════════════════════════════════════════════
+   COLOR MAPS
+   ═══════════════════════════════════════════════════ */
+const CAT_COL  = { 'Kopi':'#6366F1', 'Non-Kopi':'#F97316', 'Keduanya':'#10B981' };
+const HARGA_MAP = {
+  'Budget':  { bg:'rgba(22,163,74,.1)',  c:'#16A34A' },
+  'Mid':     { bg:'rgba(37,99,235,.1)',  c:'#2563EB' },
+  'Premium': { bg:'rgba(147,51,234,.1)', c:'#9333EA' },
+};
+function catCol(k) { return CAT_COL[k] || '#6B80A0'; }
+
+/* ═══════════════════════════════════════════════════
+   IS OPEN
+   Parse "HH:MM – HH:MM", handle midnight crossing
+   ═══════════════════════════════════════════════════ */
+function isOpen(jam_buka) {
+  if (!jam_buka || jam_buka === '-') return null;
+  const m = jam_buka.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const now   = new Date();
+  const cur   = now.getHours() * 60 + now.getMinutes();
+  const open  = parseInt(m[1]) * 60 + parseInt(m[2]);
+  const close = parseInt(m[3]) * 60 + parseInt(m[4]);
+  if (close <= open) return cur >= open || cur < close; // midnight crossing
+  return cur >= open && cur < close;
+}
+
+/* ═══════════════════════════════════════════════════
+   HINT CHIPS — render chip kecamatan di bawah search
+   ═══════════════════════════════════════════════════ */
+function renderHintChips(activeQ) {
+  const wrap = document.getElementById('hint-chips');
+  wrap.innerHTML = ALL_KECAMATAN.map(kec => {
+    const isActive = activeQ.toLowerCase() === kec.toLowerCase();
+    return `<span class="hint-chip${isActive?' hint-chip-active':''}"
+      style="${isActive?'color:var(--accent);border-color:var(--accent);background:var(--a-light);':''}"
+      onclick="setKecSearch('${kec}')">${kec}</span>`;
+  }).join('');
+}
+
+function setKecSearch(kec) {
+  const inp = document.getElementById('q');
+  // Toggle: klik chip yang sudah aktif → clear
+  inp.value = inp.value.toLowerCase() === kec.toLowerCase() ? '' : kec;
+  renderHintChips(inp.value);
+  applyFilters();
+}
+
+/* ═══════════════════════════════════════════════════
+   MAP INIT — CartoDB Positron tile
+   ═══════════════════════════════════════════════════ */
+function initMap() {
+  map = L.map('map', { center:[-3.430, 114.843], zoom:13, minZoom:11, maxZoom:18 });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+    subdomains:'abcd', maxZoom:19
+  }).addTo(map);
+
+  cluster = L.markerClusterGroup({
+    maxClusterRadius:55, spiderfyOnMaxZoom:true,
+    showCoverageOnHover:false, zoomToBoundsOnClick:true, chunkedLoading:true
+  });
+  map.addLayer(cluster);
+
+  // Cluster tooltip: breakdown per kategori
+  cluster.on('clustermouseover', function(a) {
+    const markers = a.layer.getAllChildMarkers();
+    const counts  = { 'Kopi':0, 'Non-Kopi':0, 'Keduanya':0 };
+    markers.forEach(mk => { if (mk._cafe) counts[mk._cafe.kategori] = (counts[mk._cafe.kategori]||0)+1; });
+    const rows = [
+      counts['Kopi']     ? `<div class="ctip-row"><span class="ctip-dot" style="background:#6366F1;"></span><span style="color:#6366F1;">Kopi</span><span style="margin-left:auto;color:var(--text);font-weight:800;">${counts['Kopi']}</span></div>` : '',
+      counts['Non-Kopi'] ? `<div class="ctip-row"><span class="ctip-dot" style="background:#F97316;"></span><span style="color:#F97316;">Non-Kopi</span><span style="margin-left:auto;color:var(--text);font-weight:800;">${counts['Non-Kopi']}</span></div>` : '',
+      counts['Keduanya'] ? `<div class="ctip-row"><span class="ctip-dot" style="background:#10B981;"></span><span style="color:#10B981;">Keduanya</span><span style="margin-left:auto;color:var(--text);font-weight:800;">${counts['Keduanya']}</span></div>` : '',
+    ].join('');
+    a.layer.bindTooltip(
+      `<div class="ctip"><div class="ctip-title">${markers.length} cafe dalam cluster</div>${rows}</div>`,
+      { permanent:false, direction:'top' }
+    ).openTooltip();
+  });
+  cluster.on('clustermouseout', a => a.layer.closeTooltip());
+  map.on('click', () => closeDetail());
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDER MARKERS
+   ═══════════════════════════════════════════════════ */
+function renderMarkers(data) {
+  cluster.clearLayers();
+  data.forEach(cafe => {
+    if (!cafe.latitude || !cafe.longitude || isNaN(+cafe.latitude) || isNaN(+cafe.longitude)) {
+      console.warn('[skip]', cafe.nama_cafe); return;
+    }
+    const col    = catCol(cafe.kategori);
+    const status = isOpen(cafe.jam_buka);
+    const statusDot = status !== null
+      ? `<div style="position:absolute;top:-1px;right:-1px;width:6px;height:6px;border-radius:50%;background:${status?'#16A34A':'#DC2626'};border:1.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div>`
+      : '';
+    const icon = L.divIcon({
+      className:'',
+      html:`<div style="position:relative;width:16px;height:16px;">
+        <div style="position:absolute;top:2px;left:2px;width:12px;height:12px;background:${col};border:2.5px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.18),0 0 0 2px ${col}33;cursor:pointer;"></div>
+        ${statusDot}
+      </div>`,
+      iconSize:[16,16], iconAnchor:[8,8]
+    });
+    const marker = L.marker([+cafe.latitude, +cafe.longitude], { icon });
+    marker._cafe = cafe;
+    marker.on('click', e => { L.DomEvent.stopPropagation(e); showDetail(cafe); });
+    cluster.addLayer(marker);
+  });
+  document.getElementById('nc').textContent = data.length;
+  const badge = document.getElementById('map-badge');
+  if (data.length < cafeData.length) {
+    document.getElementById('map-badge-txt').textContent = `${data.length} dari ${cafeData.length} cafe`;
+    badge.classList.add('vis');
+  } else {
+    badge.classList.remove('vis');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   DETAIL PANEL
+   ═══════════════════════════════════════════════════ */
+function showDetail(cafe) {
+  const col    = catCol(cafe.kategori);
+  const hs     = HARGA_MAP[cafe.kisaran_harga] || { bg:'transparent', c:'#333' };
+  const status = isOpen(cafe.jam_buka);
+  const rPct   = (((+cafe.rating - 1) / 4) * 100).toFixed(1);
+  const starHtml = [1,2,3,4,5].map(i =>
+    `<span style="color:${i<=Math.round(+cafe.rating)?'#F59E0B':'#DDE4EE'}">★</span>`
+  ).join('');
+
+  document.getElementById('dp-stripe').style.background = col;
+  document.getElementById('dp-name').textContent = cafe.nama_cafe;
+
+  let openBadge = '';
+  if (status === true)       openBadge = `<span class="badge-open"><span class="badge-dot"></span>Buka Sekarang</span>`;
+  else if (status === false) openBadge = `<span class="badge-closed"><span class="badge-dot"></span>Tutup</span>`;
+
+  document.getElementById('dp-badges').innerHTML = `
+    <span class="dp-badge" style="background:${col}18;color:${col};">${cafe.kategori}</span>
+    <span class="dp-badge" style="background:${hs.bg};color:${hs.c};">${cafe.kisaran_harga}</span>
+    ${openBadge}
+  `;
+
+  document.getElementById('dp-body').innerHTML = `
+    <div class="dp-row">
+      <span class="dp-ico">📍</span>
+      <span class="dp-val">${cafe.alamat}, ${cafe.kecamatan}</span>
+    </div>
+    <div class="dp-row">
+      <span class="dp-ico">🕐</span>
+      <span class="dp-val"><strong>${cafe.jam_buka}</strong></span>
+    </div>
+    <div class="dp-divider"></div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="font-size:9px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;font-family:'Outfit',sans-serif;">Rating</div>
+      <div class="dp-rrow">
+        <div class="dp-rnum">${(+cafe.rating).toFixed(1)}</div>
+        <div>
+          <div class="dp-stars">${starHtml}</div>
+          <div class="dp-rsub">dari 5.0</div>
+        </div>
+      </div>
+      <div class="dp-rbar">
+        <div class="dp-rfill" style="width:${rPct}%;background:linear-gradient(90deg,${col},${col}99);"></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('detail').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════
+   HEATMAP
+   ═══════════════════════════════════════════════════ */
+function applyHeat() {
+  if (heat) { map.removeLayer(heat); heat = null; }
+  if (!document.getElementById('th').checked) return;
+  const pts = getFiltered().map(c => [+c.latitude, +c.longitude, 1.0]);
+  if (!pts.length) return;
+  heat = L.heatLayer(pts, { radius:35, blur:25, maxZoom:16, gradient:{'0.35':'#6366F1','0.65':'#F59E0B','1.0':'#EF4444'} }).addTo(map);
+}
+
+/* ═══════════════════════════════════════════════════
+   FILTER ENGINE
+   Search mencari nama_cafe DAN kecamatan
+   ═══════════════════════════════════════════════════ */
+function getFiltered() {
+  const q    = (document.getElementById('q').value || '').toLowerCase().trim();
+  const minR = parseFloat(document.getElementById('sr').value);
+  return cafeData.filter(c => {
+    // Cari di nama_cafe ATAU kecamatan
+    if (q) {
+      const matchNama = c.nama_cafe.toLowerCase().includes(q);
+      const matchKec  = c.kecamatan.toLowerCase().includes(q);
+      if (!matchNama && !matchKec) return false;
+    }
+    if (c.kategori === 'Kopi'     && !P.k) return false;
+    if (c.kategori === 'Non-Kopi' && !P.n) return false;
+    if (c.kategori === 'Keduanya' && !P.e) return false;
+    if (c.kisaran_harga === 'Budget'  && !P.b) return false;
+    if (c.kisaran_harga === 'Mid'     && !P.m) return false;
+    if (c.kisaran_harga === 'Premium' && !P.p) return false;
+    if (+c.rating < minR) return false;
+    return true;
+  });
+}
+
+function applyFilters() {
+  const d = getFiltered();
+  renderMarkers(d);
+  updateStats(d);
+  updateCharts(d);
+  if (document.getElementById('th').checked) applyHeat();
+}
+
+function onQ() {
+  renderHintChips(document.getElementById('q').value);
+  applyFilters();
+}
+function onRng() {
+  document.getElementById('rv').textContent = '★ ' + parseFloat(document.getElementById('sr').value).toFixed(1);
+  applyFilters();
+}
+function clearQ() {
+  document.getElementById('q').value = '';
+  renderHintChips('');
+  applyFilters();
+}
+
+/* ─── Pill toggle ─── */
+function togglePill(id) {
+  P[id] = !P[id];
+  document.getElementById(PILL_EL[id]).classList.toggle('on', P[id]);
+  applyFilters();
+}
+function toggleAllCat() {
+  const allOn = P.k && P.n && P.e;
+  ['k','n','e'].forEach(id => { P[id]=!allOn; document.getElementById(PILL_EL[id]).classList.toggle('on',!allOn); });
+  applyFilters();
+}
+function resetAll() {
+  document.getElementById('q').value = '';
+  document.getElementById('sr').value = 1;
+  document.getElementById('rv').textContent = '★ 1.0';
+  Object.keys(P).forEach(id => { P[id]=true; document.getElementById(PILL_EL[id]).classList.add('on'); });
+  renderHintChips('');
+  closeDetail();
+  applyFilters();
+}
+
+/* ═══════════════════════════════════════════════════
+   STATISTIK
+   ═══════════════════════════════════════════════════ */
+function updateStats(data) {
+  document.getElementById('s-tot').textContent = data.length;
+  if (!data.length) {
+    document.getElementById('s-avg').textContent = '—';
+    document.getElementById('s-top').textContent = '—';
+    document.getElementById('cbars').innerHTML = '';
+    return;
+  }
+  const avg = (data.reduce((s,c)=>s + +c.rating,0)/data.length).toFixed(1);
+  document.getElementById('s-avg').textContent = '★ '+avg;
+  const cts = {};
+  data.forEach(c=>{cts[c.kategori]=(cts[c.kategori]||0)+1;});
+  const top = Object.entries(cts).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('s-top').textContent = top?`${top[0]} (${top[1]})`:'—';
+  const total = data.length;
+  document.getElementById('cbars').innerHTML = [
+    {lbl:'Kopi',     count:cts['Kopi']||0,     col:'#6366F1'},
+    {lbl:'Non-Kopi', count:cts['Non-Kopi']||0, col:'#F97316'},
+    {lbl:'Keduanya', count:cts['Keduanya']||0, col:'#10B981'},
+  ].map(b=>`
+    <div class="cb-row">
+      <span class="cb-lbl">${b.lbl}</span>
+      <div class="cb-track"><div class="cb-fill" style="width:${total>0?(b.count/total*100).toFixed(1):0}%;background:${b.col};"></div></div>
+      <span class="cb-num" style="color:${b.col};">${b.count}</span>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════
+   TOGGLE
+   ═══════════════════════════════════════════════════ */
+function toggleSb() {
+  sbOpen=!sbOpen;
+  document.getElementById('sb').classList.toggle('closed',!sbOpen);
+  setTimeout(()=>map.invalidateSize(),260);
+}
+function toggleDash() {
+  dashOpen=!dashOpen;
+  const el=document.getElementById('dash');
+  el.classList.toggle('exp',dashOpen);
+  el.classList.toggle('col',!dashOpen);
+  if(dashOpen){setTimeout(()=>[c1,c2,c3].forEach(ch=>ch&&ch.resize()),320);}
+  setTimeout(()=>map.invalidateSize(),320);
+}
+
+/* ═══════════════════════════════════════════════════
+   CHART.JS
+   ═══════════════════════════════════════════════════ */
+function countBy(arr,field,keys){
+  const r={};keys.forEach(k=>r[k]=0);
+  arr.forEach(item=>{if(r[item[field]]!==undefined)r[item[field]]++;});
+  return r;
+}
+function initCharts(data) {
+  const base={
+    responsive:true,maintainAspectRatio:false,animation:{duration:500},
+    plugins:{legend:{position:'bottom',labels:{color:'#6B80A0',font:{size:9,family:"'Outfit'"},boxWidth:8,padding:7}}}
+  };
+  const ax={ticks:{color:'#99AABB',font:{size:9,family:"'Outfit'"}},grid:{color:'rgba(200,212,227,.5)'}};
+  const cc=countBy(data,'kategori',['Kopi','Non-Kopi','Keduanya']);
+  c1=new Chart(document.getElementById('c1'),{
+    type:'bar',
+    data:{labels:['Kopi','Non-Kopi','Keduanya'],datasets:[{label:'Cafe',data:[cc.Kopi,cc['Non-Kopi'],cc.Keduanya],backgroundColor:['#6366F1','#F97316','#10B981'],borderRadius:5,borderSkipped:false}]},
+    options:{...base,plugins:{...base.plugins,legend:{display:false}},scales:{x:{...ax,grid:{display:false}},y:{...ax,beginAtZero:true,ticks:{...ax.ticks,stepSize:1}}}}
+  });
+  const hc=countBy(data,'kisaran_harga',['Budget','Mid','Premium']);
+  c2=new Chart(document.getElementById('c2'),{
+    type:'doughnut',
+    data:{labels:['Budget','Mid','Premium'],datasets:[{data:[hc.Budget,hc.Mid,hc.Premium],backgroundColor:['#16A34A','#2563EB','#9333EA'],borderColor:'#F7F9FC',borderWidth:2,hoverOffset:5}]},
+    options:{...base,cutout:'60%',plugins:{...base.plugins,tooltip:{callbacks:{label:ctx=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);const p=t>0?((ctx.raw/t)*100).toFixed(1):0;return ` ${ctx.label}: ${ctx.raw} (${p}%)`;}}}}}
+  });
+  const top5=[...data].sort((a,b)=>+b.rating - +a.rating).slice(0,5);
+  c3=new Chart(document.getElementById('c3'),{
+    type:'bar',
+    data:{labels:top5.map(c=>c.nama_cafe.length>13?c.nama_cafe.slice(0,13)+'…':c.nama_cafe),datasets:[{label:'Rating',data:top5.map(c=>+c.rating),backgroundColor:top5.map((_,i)=>`rgba(245,158,11,${0.95-i*0.13})`),borderRadius:4,borderSkipped:false}]},
+    options:{...base,indexAxis:'y',plugins:{...base.plugins,legend:{display:false}},scales:{x:{...ax,min:0,max:5},y:{...ax,grid:{display:false}}}}
+  });
+}
+function updateCharts(data) {
+  if(!c1||!c2||!c3) return;
+  const cc=countBy(data,'kategori',['Kopi','Non-Kopi','Keduanya']);
+  c1.data.datasets[0].data=[cc.Kopi,cc['Non-Kopi'],cc.Keduanya];c1.update();
+  const hc=countBy(data,'kisaran_harga',['Budget','Mid','Premium']);
+  c2.data.datasets[0].data=[hc.Budget,hc.Mid,hc.Premium];c2.update();
+  const top5=[...data].sort((a,b)=>+b.rating - +a.rating).slice(0,5);
+  c3.data.labels=top5.map(c=>c.nama_cafe.length>13?c.nama_cafe.slice(0,13)+'…':c.nama_cafe);
+  c3.data.datasets[0].data=top5.map(c=>+c.rating);
+  c3.data.datasets[0].backgroundColor=top5.map((_,i)=>`rgba(245,158,11,${0.95-i*0.13})`);
+  c3.update();
+}
+
+/* ═══════════════════════════════════════════════════
+   CSV UPLOAD
+   ═══════════════════════════════════════════════════ */
+function handleCSV(e) {
+  const file=e.target.files[0];if(!file)return;
+  Papa.parse(file,{
+    header:true,dynamicTyping:true,skipEmptyLines:true,
+    complete(res){
+      const valid=[];
+      res.data.forEach((row,i)=>{
+        const lat=parseFloat(row.latitude),lng=parseFloat(row.longitude),r=parseFloat(row.rating);
+        if(isNaN(lat)||isNaN(lng)){console.warn(`[CSV] baris ${i+1}: koordinat invalid`);return;}
+        if(isNaN(r)){console.warn(`[CSV] baris ${i+1}: rating invalid`);return;}
+        valid.push({
+          nama_cafe:row.nama_cafe||'Tanpa Nama',
+          kecamatan:row.kecamatan||'-',
+          latitude:lat,longitude:lng,
+          alamat:row.alamat||'-',
+          kategori:row.kategori||'Kopi',
+          jam_buka:row.jam_buka||'-',
+          kisaran_harga:row.kisaran_harga||'Budget',
+          rating:r
+        });
+      });
+      if(!valid.length){alert('Format CSV tidak valid.\nKolom: nama_cafe, kecamatan, latitude, longitude, alamat, kategori, jam_buka, kisaran_harga, rating');return;}
+      cafeData=valid;resetAll();
+      alert(`Berhasil memuat ${valid.length} data cafe dari CSV.`);
+    },
+    error(){alert('Gagal membaca file CSV.');}
+  });
+  e.target.value='';
+}
+
+/* ═══════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════ */
+function hideLoading(){
+  const el=document.getElementById('loading');
+  el.classList.add('out');
+  setTimeout(()=>el.style.display='none',450);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  initMap();
+  renderHintChips('');
+  setTimeout(()=>{
+    try{
+      const d=getFiltered();
+      renderMarkers(d);
+      updateStats(d);
+      initCharts(d);
+      const coords=cafeData.filter(c=>!isNaN(+c.latitude)&&!isNaN(+c.longitude)).map(c=>[+c.latitude,+c.longitude]);
+      if(coords.length) map.fitBounds(coords,{padding:[50,50]});
+    }catch(err){console.error('[init]',err);}
+    hideLoading();
+  },800);
+});
+</script>
+</body>
+</html>
