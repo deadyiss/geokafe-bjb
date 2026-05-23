@@ -112,7 +112,7 @@ Baris dengan `latitude` atau `longitude` kosong/tidak valid akan dilewati otomat
 ## Struktur File
 
 ```
-geokafe-bjb.html   ← satu-satunya file yang diperlukan
+index.html   ← satu-satunya file yang diperlukan
 README.md
 ```
 
