@@ -9,6 +9,22 @@ WebGIS berbasis satu file HTML yang menampilkan persebaran cafe di wilayah Kota 
 ## Akses Github Pages
 URL : https://deadyiss.github.io/geokafe-bjb/
 
+## Scrernshots
+### Loading Screen
+<img width="1303" height="692" alt="image" src="https://github.com/user-attachments/assets/f0db4b4a-cbad-44f6-8d3a-b2e55b20d0f5" />
+
+### Tampilan Utama
+<img width="1839" height="832" alt="image" src="https://github.com/user-attachments/assets/f64051ee-2d62-45a5-8213-4a1f23c0e860" />
+
+### Dashboard Analitik
+<img width="1839" height="555" alt="image" src="https://github.com/user-attachments/assets/6754d7f1-acbe-4bf6-8d43-a65b403fbb64" />
+
+### Card Cafe
+<img width="934" height="500" alt="image" src="https://github.com/user-attachments/assets/da528e46-ce81-488d-921b-6daeadd44963" />
+
+
+
+
 ---
 ## Fitur
 
